@@ -32,12 +32,18 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      # Android SDK уже предустановлен на ubuntu-latest (ANDROID_HOME),
-      # поэтому отдельный шаг android-actions/setup-android не нужен.
-
       - name: Build APK
         working-directory: source/FlagLive
-        run: gradle assembleDebug --stacktrace
+        run: |
+          set -o pipefail
+          gradle assembleDebug --console=plain 2>&1 | tee build.log
+
+      - name: Show error summary
+        if: failure()
+        working-directory: source/FlagLive
+        run: |
+          echo "=== ERRORS ==="
+          grep -n -B2 -A12 -E "error:|What went wrong|Could not resolve|FAILED" build.log | head -120
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
